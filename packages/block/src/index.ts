@@ -49,12 +49,12 @@ export default {
 			[avalanche.id]: env.AVALANCHE_RPC_URL,
 		};
 
-		let chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
-		let providerUrl = RPCS[chainId as unknown as keyof typeof RPCS];
+		const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
+		const providerUrl = RPCS[chainId as unknown as keyof typeof RPCS];
 
 		const client = createPublicClient({
-			chain: mainnet,
-			transport: http(env.MAINNET_RPC_URL),
+			chain: chain,
+			transport: http(providerUrl),
 		});
 
 		const block = await client.getBlock();

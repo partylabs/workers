@@ -16,9 +16,16 @@ compatibility_date = "2023-11-21"
 
 # Bind an R2 Bucket. Use R2 to store arbitrarily large blobs of data, such as files.
 # Docs: https://developers.cloudflare.com/r2/api/workers/workers-api-usage/
-# [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
+[[r2_buckets]]
+binding = "LIST"
+bucket_name = "list"
+preview_bucket_name = "list"
+
+[[r2_buckets]]
+binding = "CONTRACTS"
+bucket_name = "contracts"
+preview_bucket_name = "contracts"
+
 
 # Bind a Queue producer. Use this binding to schedule an arbitrary task that may be processed later by a Queue consumer.
 # Docs: https://developers.cloudflare.com/queues/get-started

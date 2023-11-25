@@ -9,24 +9,27 @@
  */
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+	LIST: R2Bucket;
+
+	BALANCE_CHAIN_ADDRESS: Fetcher;
 }
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		if (request.method.toUpperCase() !== 'POST') {
+			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
+		}
+
+		const { chainId, publicKey } = (await request.json()) as {
+			chainId: number;
+			publicKey: string;
+		};
+
+		const r2ObjectBalance = await env.LIST.get('balance.json');
+		const balanceList = JSON.parse((await r2ObjectBalance?.text()) as string);
+
+		parseInt(balanceList);
+
 		return new Response('Hello World!');
 	},
 };

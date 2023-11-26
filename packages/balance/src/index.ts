@@ -20,35 +20,33 @@ export default {
 
 			const url = 'https://balance-chain.partylabs.workers.dev';
 
-			let balances = await Promise.all(
-				publicKeys.map(async (publicKey) => {
-					const res = await Promise.all(
-						CHAINS.flatMap(async (chain) => {
-							const requestInfo: RequestInfo = new Request(url, {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/json',
-								},
-								body: JSON.stringify({
-									chainId: chain.id,
-									publicKey: getAddress(publicKey),
-								}),
-							});
+			const combinations = publicKeys.flatMap((publicKey) => CHAINS.map((chain) => ({ chainId: chain.id, publicKey })));
 
-							const response = await env.BALANCE_CHAIN.fetch(url, requestInfo);
-							const text = (await response.json()) as Record<string, unknown>;
-							if (Object.keys(text).length === 0) {
-								return null;
-							} else {
-								return text;
-							}
-						})
-					).then((results) => results.filter((result) => result !== null).flat());
-					return res;
+			const results = await Promise.all(
+				combinations.flatMap(async (combination) => {
+					const requestInfo: RequestInfo = new Request(url, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(combination),
+					});
+
+					const response = await env.BALANCE_CHAIN.fetch(url, requestInfo);
+					const text = (await response.json()) as Record<string, unknown>;
+					if (Object.keys(text).length === 0) {
+						return null;
+					} else {
+						return text;
+					}
 				})
-			).then((results) => results.flat());
+			);
 
-			return new Response(JSON.stringify(balances), { status: 200 });
+			console.log(results);
+
+			// ).then((results) => results.filter((result) => result !== null).flat());
+
+			return new Response(JSON.stringify({}), { status: 200 });
 		} catch (error) {
 			return new Response(JSON.stringify({ error: error }), { status: 500 });
 		}

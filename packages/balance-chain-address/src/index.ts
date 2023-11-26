@@ -22,6 +22,7 @@ import { createPublicClient, getAddress, http, isAddress } from 'viem';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		console.log('request came in');
 		if (request.method.toUpperCase() !== 'POST') {
 			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
 		}
@@ -92,7 +93,7 @@ export default {
 		const mappedResults: { [key: string]: any } = {};
 		mappedResults[getAddress('0x0000000000000000000000000000000000000000')] = balance;
 		results.forEach((result: any, index: number) => {
-			if (result.result !== '0') {
+			if (result.result !== BigInt(0)) {
 				mappedResults[tokenAddresses[index]] = result.result;
 			}
 		});

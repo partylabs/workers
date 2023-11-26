@@ -35,7 +35,6 @@ export default {
 			const text = await response.json();
 			return new Response(JSON.stringify(text), { status: 200 });
 		} catch (error) {
-			console.log('Error: ' + error);
 			return new Response(JSON.stringify({ error: error }), { status: 500 });
 		}
 	},

@@ -91,17 +91,25 @@ export default {
 		});
 
 		const mappedResults: { [key: string]: any } = {};
-		mappedResults[getAddress('0x0000000000000000000000000000000000000000')] = balance;
+		if (balance && balance !== BigInt(0)) {
+			mappedResults[getAddress('0x0000000000000000000000000000000000000000')] = balance;
+		}
+
 		results.forEach((result: any, index: number) => {
-			if (result.result !== BigInt(0)) {
-				mappedResults[tokenAddresses[index]] = result.result;
+			const balance = result.result;
+			if (balance && balance !== BigInt(0)) {
+				console.log(balance);
+				mappedResults[tokenAddresses[index]] = balance;
 			}
 		});
 
-		const result = {
-			[`${chainId}_${getAddress(publicKey)}`]: mappedResults,
-		};
-
-		return new Response(JSON.stringify(result), { status: 200 });
+		if (Object.keys(mappedResults).length > 0) {
+			const result = {
+				[`${chainId}_${getAddress(publicKey)}`]: mappedResults,
+			};
+			return new Response(JSON.stringify(result), { status: 200 });
+		} else {
+			return new Response(JSON.stringify({}), { status: 200 });
+		}
 	},
 };

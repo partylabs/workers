@@ -4,8 +4,8 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --port 16100",
-		"start": "wrangler dev --port 16100"
+		"dev": "wrangler dev --port 16100 --remote",
+		"start": "wrangler dev --port 16100 --remote"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20230419.0",

@@ -1,32 +1,56 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+	BALANCE_CHAIN: Fetcher;
 }
+
+import { mainnet, arbitrum, avalanche, base, bsc, optimism, polygon, pulsechain } from 'viem/chains';
+import { getAddress } from 'viem';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+		if (request.method.toUpperCase() !== 'POST') {
+			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
+		}
+
+		try {
+			const CHAINS = [mainnet, arbitrum, avalanche, base, bsc, optimism, polygon, pulsechain];
+
+			const { publicKeys } = (await request.json()) as {
+				publicKeys: string[];
+			};
+
+			const url = 'https://balance-chain.partylabs.workers.dev';
+
+			let balances = await Promise.all(
+				publicKeys.map(async (publicKey) => {
+					const res = await Promise.all(
+						CHAINS.flatMap(async (chain) => {
+							const requestInfo: RequestInfo = new Request(url, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json',
+								},
+								body: JSON.stringify({
+									chainId: chain.id,
+									publicKey: getAddress(publicKey),
+								}),
+							});
+
+							const response = await env.BALANCE_CHAIN.fetch(url, requestInfo);
+							const text = (await response.json()) as Record<string, unknown>;
+							if (Object.keys(text).length === 0) {
+								return null;
+							} else {
+								return text;
+							}
+						})
+					).then((results) => results.filter((result) => result !== null).flat());
+					return res;
+				})
+			).then((results) => results.flat());
+
+			return new Response(JSON.stringify(balances), { status: 200 });
+		} catch (error) {
+			return new Response(JSON.stringify({ error: error }), { status: 500 });
+		}
 	},
 };

@@ -91,7 +91,7 @@ export default {
 			const balance = fromHex(getBalanceResult.result, 'bigint') as bigint;
 			if (balance !== BigInt(0)) {
 				return {
-					chainId: chain.id,
+					chainId: chainId,
 					address: null,
 					...chain.nativeCurrency,
 					logoURI: `https://chain.partylabs.org/${chainId}.webp`,

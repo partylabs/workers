@@ -1,9 +1,26 @@
 export interface Env {
-	BALANCE_CHAIN: Fetcher;
+	MAINNET_RPC_URL: string;
+	PULSECHAIN_RPC_URL: string;
+	POLYGON_RPC_URL: string;
+	OPTIMISM_RPC_URL: string;
+	BSC_RPC_URL: string;
+	ZKSYNC_RPC_URL: string;
+	ARBITRUM_RPC_URL: string;
+	AVALANCHE_RPC_URL: string;
+	BASE_RPC_URL: string;
+	FANTOM_RPC_URL: string;
+
+	CONTRACTS: R2Bucket;
+	LIST: R2Bucket;
 }
 
-import { mainnet, arbitrum, avalanche, base, bsc, optimism, polygon, pulsechain } from 'viem/chains';
-import { getAddress } from 'viem';
+import { arbitrum, avalanche, base, bsc, mainnet, optimism, polygon, pulsechain } from 'viem/chains';
+import { createPublicClient, getAddress, http, fromHex } from 'viem';
+import { CHAINS } from './lib/chains';
+
+(BigInt.prototype as any).toJSON = function () {
+	return this.toString();
+};
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -11,44 +28,114 @@ export default {
 			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
 		}
 
-		try {
-			const CHAINS = [mainnet, arbitrum, avalanche, base, bsc, optimism, polygon, pulsechain];
+		const { publicKeys } = (await request.json()) as {
+			publicKeys: string[];
+		};
 
-			const { publicKeys } = (await request.json()) as {
-				publicKeys: string[];
+		const balances = await Promise.all(
+			Object.keys(CHAINS).flatMap(async (chainId) => {
+				return await this.getBalances(publicKeys, chainId, env);
+			})
+		).then((results) => results.filter((result) => result !== null).flat());
+
+		return new Response(JSON.stringify(balances), { status: 200 });
+	},
+
+	async getBalances(publicKeys: string[], chainId: string, env: Env) {
+		const RPCS = {
+			[mainnet.id]: env.MAINNET_RPC_URL,
+			[optimism.id]: env.OPTIMISM_RPC_URL,
+			[bsc.id]: env.BSC_RPC_URL,
+			[polygon.id]: env.POLYGON_RPC_URL,
+			[pulsechain.id]: env.PULSECHAIN_RPC_URL,
+			[base.id]: env.BASE_RPC_URL,
+			[arbitrum.id]: env.ARBITRUM_RPC_URL,
+			[avalanche.id]: env.AVALANCHE_RPC_URL,
+		};
+
+		const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
+		const providerUrl = RPCS[chainId as unknown as keyof typeof RPCS];
+
+		const r2ObjectBalance = await env.LIST.get(`${chainId}_balance.json`);
+		const tokenAddresses = (await r2ObjectBalance?.json()) as any;
+
+		const r2ObjectERC20 = await env.CONTRACTS.get('erc20.json');
+		const ERC20 = (await r2ObjectERC20?.json()) as string;
+
+		const client = createPublicClient({
+			chain: chain,
+			transport: http(providerUrl),
+		});
+
+		const bodyRequest = publicKeys.map((publicKey: string, index: number) => {
+			return {
+				method: 'eth_getBalance',
+				params: [publicKey, 'latest'],
+				id: index,
+				jsonrpc: '2.0',
 			};
+		});
 
-			const url = 'https://balance-chain.partylabs.workers.dev';
+		const request = new Request(providerUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(bodyRequest),
+		});
 
-			const combinations = publicKeys.flatMap((publicKey) => CHAINS.map((chain) => ({ chainId: chain.id, publicKey })));
+		const result = await fetch(request);
+		const getBalanceResults = (await result.json()) as any[];
 
-			const results = await Promise.all(
-				combinations.flatMap(async (combination) => {
-					const requestInfo: RequestInfo = new Request(url, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify(combination),
-					});
+		const nativeBalances = getBalanceResults.flatMap((getBalanceResult: any) => {
+			const balance = fromHex(getBalanceResult.result, 'bigint') as bigint;
+			if (balance !== BigInt(0)) {
+				return {
+					chainId: chain.id,
+					address: null,
+					...chain.nativeCurrency,
+					logoURI: `https://chain.partylabs.org/${chainId}.webp`,
+					publicKey: publicKeys[0],
+					balance: balance,
+				};
+			} else {
+				return null;
+			}
+		});
 
-					const response = await env.BALANCE_CHAIN.fetch(url, requestInfo);
-					const text = (await response.json()) as Record<string, unknown>;
-					if (Object.keys(text).length === 0) {
-						return null;
-					} else {
-						return text;
-					}
-				})
-			);
+		let erc20Contracts = publicKeys.flatMap((publicKey: string) => {
+			return tokenAddresses.tokens.map((token: any) => {
+				return {
+					address: getAddress(token.address),
+					abi: ERC20,
+					functionName: 'balanceOf',
+					args: [getAddress(publicKey)],
+				};
+			});
+		});
 
-			console.log(results);
+		const results = await client.multicall({
+			contracts: erc20Contracts,
+		});
 
-			// ).then((results) => results.filter((result) => result !== null).flat());
+		const erc20Balances = erc20Contracts.flatMap((contract: any, index: number) => {
+			const result = results[index];
+			const balance = result.result as bigint;
+			if (result && result.status !== 'failure' && balance && balance !== BigInt(0)) {
+				const tokenMapKey = `${chainId}_${contract.address}`;
+				const tokenData = tokenAddresses.tokenMap[tokenMapKey];
+				console.log(tokenData);
+				return {
+					...tokenData,
+					publicKey: contract.args[0],
+					balance: balance,
+				};
+			} else {
+				return null;
+			}
+		});
 
-			return new Response(JSON.stringify({}), { status: 200 });
-		} catch (error) {
-			return new Response(JSON.stringify({ error: error }), { status: 500 });
-		}
+		const allBalances = nativeBalances.concat(erc20Balances).filter((item: any) => item !== null);
+		return allBalances;
 	},
 };

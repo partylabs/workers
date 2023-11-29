@@ -1,5 +1,5 @@
 export interface Env {
-	MAINNET_RPC_URL: string;
+	RPC_URL_1: string;
 }
 
 import { createPublicClient, http } from 'viem';
@@ -19,7 +19,7 @@ export default {
 
 		const client = createPublicClient({
 			chain: mainnet,
-			transport: http(env.MAINNET_RPC_URL),
+			transport: http(env.RPC_URL_1),
 		});
 
 		const ensAddress = await client.getEnsAddress({

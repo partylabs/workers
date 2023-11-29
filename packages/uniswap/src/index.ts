@@ -1,4 +1,6 @@
 export interface Env {
+	[key: string]: any;
+
 	RPC_URL_1: string;
 	RPC_URL_10: string;
 	RPC_URL_137: string;

@@ -1,22 +1,23 @@
 export interface Env {
-	MAINNET_RPC_URL: string;
-	PULSECHAIN_RPC_URL: string;
-	POLYGON_RPC_URL: string;
-	OPTIMISM_RPC_URL: string;
-	BSC_RPC_URL: string;
-	ZKSYNC_RPC_URL: string;
-	ARBITRUM_RPC_URL: string;
-	AVALANCHE_RPC_URL: string;
-	BASE_RPC_URL: string;
-	FANTOM_RPC_URL: string;
+	[key: string]: any;
+
+	RPC_URL_1: string;
+	RPC_URL_10: string;
+	RPC_URL_137: string;
+	RPC_URL_250: string;
+	RPC_URL_324: string;
+	RPC_URL_359: string;
+	RPC_URL_42161: string;
+	RPC_URL_43114: string;
+	RPC_URL_56: string;
+	RPC_URL_8453: string;
 
 	CONTRACTS: R2Bucket;
 	LIST: R2Bucket;
 }
 
-import { arbitrum, avalanche, base, bsc, mainnet, optimism, polygon, pulsechain } from 'viem/chains';
 import { createPublicClient, getAddress, http, fromHex } from 'viem';
-import { CHAINS } from './lib/chains';
+import { CHAINS } from './constants/chains';
 
 (BigInt.prototype as any).toJSON = function () {
 	return this.toString();
@@ -45,26 +46,15 @@ export default {
 	},
 
 	async getBalances(publicKeys: string[], chainId: string, ERC20: string, env: Env) {
-		const RPCS = {
-			[mainnet.id]: env.MAINNET_RPC_URL,
-			[optimism.id]: env.OPTIMISM_RPC_URL,
-			[bsc.id]: env.BSC_RPC_URL,
-			[polygon.id]: env.POLYGON_RPC_URL,
-			[pulsechain.id]: env.PULSECHAIN_RPC_URL,
-			[base.id]: env.BASE_RPC_URL,
-			[arbitrum.id]: env.ARBITRUM_RPC_URL,
-			[avalanche.id]: env.AVALANCHE_RPC_URL,
-		};
-
+		const providerURL = env[`RPC_URL_${chainId}`];
 		const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
-		const providerUrl = RPCS[chainId as unknown as keyof typeof RPCS];
 
 		const r2ObjectBalance = await env.LIST.get(`${chainId}_balance.json`);
 		const tokenAddresses = (await r2ObjectBalance?.json()) as any;
 
 		const client = createPublicClient({
 			chain: chain,
-			transport: http(providerUrl),
+			transport: http(providerURL),
 		});
 
 		const bodyRequest = publicKeys.map((publicKey: string, index: number) => {
@@ -76,7 +66,7 @@ export default {
 			};
 		});
 
-		const request = new Request(providerUrl, {
+		const request = new Request(providerURL, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -124,7 +114,6 @@ export default {
 			if (result && result.status !== 'failure' && balance && balance !== BigInt(0)) {
 				const tokenMapKey = `${chainId}_${contract.address}`;
 				const tokenData = tokenAddresses.tokenMap[tokenMapKey];
-				console.log(tokenData);
 				return {
 					...tokenData,
 					publicKey: contract.args[0],

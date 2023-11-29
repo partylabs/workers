@@ -27,6 +27,13 @@ export interface Env {
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+		switch (true) {
+			case request.url.endsWith('/prices'):
+				return new Response('Price response');
+			case request.url.endsWith('/liquidity-positions'):
+				return new Response('Liquidity positions response');
+			default:
+				return new Response('Not found', { status: 404 });
+		}
 	},
 };

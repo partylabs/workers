@@ -32,16 +32,19 @@ export default {
 			publicKeys: string[];
 		};
 
+		const r2ObjectERC20 = await env.CONTRACTS.get('erc20.json');
+		const ERC20 = (await r2ObjectERC20?.json()) as string;
+
 		const balances = await Promise.all(
 			Object.keys(CHAINS).flatMap(async (chainId) => {
-				return await this.getBalances(publicKeys, chainId, env);
+				return await this.getBalances(publicKeys, chainId, ERC20, env);
 			})
 		).then((results) => results.filter((result) => result !== null).flat());
 
 		return new Response(JSON.stringify(balances), { status: 200 });
 	},
 
-	async getBalances(publicKeys: string[], chainId: string, env: Env) {
+	async getBalances(publicKeys: string[], chainId: string, ERC20: string, env: Env) {
 		const RPCS = {
 			[mainnet.id]: env.MAINNET_RPC_URL,
 			[optimism.id]: env.OPTIMISM_RPC_URL,
@@ -58,9 +61,6 @@ export default {
 
 		const r2ObjectBalance = await env.LIST.get(`${chainId}_balance.json`);
 		const tokenAddresses = (await r2ObjectBalance?.json()) as any;
-
-		const r2ObjectERC20 = await env.CONTRACTS.get('erc20.json');
-		const ERC20 = (await r2ObjectERC20?.json()) as string;
 
 		const client = createPublicClient({
 			chain: chain,

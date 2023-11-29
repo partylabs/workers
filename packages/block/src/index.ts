@@ -1,18 +1,20 @@
 export interface Env {
-	MAINNET_RPC_URL: string;
-	PULSECHAIN_RPC_URL: string;
-	POLYGON_RPC_URL: string;
-	OPTIMISM_RPC_URL: string;
-	BSC_RPC_URL: string;
-	ZKSYNC_RPC_URL: string;
-	ARBITRUM_RPC_URL: string;
-	AVALANCHE_RPC_URL: string;
-	BASE_RPC_URL: string;
-	FANTOM_RPC_URL: string;
+	[key: string]: string;
+
+	RPC_URL_1: string;
+	RPC_URL_10: string;
+	RPC_URL_137: string;
+	RPC_URL_250: string;
+	RPC_URL_324: string;
+	RPC_URL_359: string;
+	RPC_URL_42161: string;
+	RPC_URL_43114: string;
+	RPC_URL_56: string;
+	RPC_URL_8453: string;
 }
 
-import { arbitrum, avalanche, base, bsc, mainnet, optimism, polygon, pulsechain, zkSync } from 'viem/chains';
 import { createPublicClient, http } from 'viem';
+import { CHAINS } from './constants/chains';
 
 (BigInt.prototype as any).toJSON = function () {
 	return this.toString();
@@ -21,40 +23,18 @@ import { createPublicClient, http } from 'viem';
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
-		const chainId = url.searchParams.get('chainId');
+		const chainId = url.searchParams.get('chainId') as string;
 
 		if (!chainId || isNaN(Number(chainId))) {
 			return new Response(JSON.stringify({ error: 'Invalid or missing chainId' }), { status: 404 });
 		}
 
-		const CHAINS = {
-			[mainnet.id]: mainnet,
-			[optimism.id]: optimism,
-			[bsc.id]: bsc,
-			[polygon.id]: polygon,
-			[pulsechain.id]: pulsechain,
-			[base.id]: base,
-			[arbitrum.id]: arbitrum,
-			[avalanche.id]: avalanche,
-		};
-
-		const RPCS = {
-			[mainnet.id]: env.MAINNET_RPC_URL,
-			[optimism.id]: env.OPTIMISM_RPC_URL,
-			[bsc.id]: env.BSC_RPC_URL,
-			[polygon.id]: env.POLYGON_RPC_URL,
-			[pulsechain.id]: env.PULSECHAIN_RPC_URL,
-			[base.id]: env.BASE_RPC_URL,
-			[arbitrum.id]: env.ARBITRUM_RPC_URL,
-			[avalanche.id]: env.AVALANCHE_RPC_URL,
-		};
-
+		const providerURL = env[`RPC_URL_${chainId}`];
 		const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
-		const providerUrl = RPCS[chainId as unknown as keyof typeof RPCS];
 
 		const client = createPublicClient({
 			chain: chain,
-			transport: http(providerUrl),
+			transport: http(providerURL),
 		});
 
 		const block = await client.getBlock();

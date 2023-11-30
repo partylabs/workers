@@ -26,6 +26,11 @@ binding = "LIST"
 bucket_name = "list"
 preview_bucket_name = "list"
 
+[[r2_buckets]]
+binding = "DEX_SETTINGS"
+bucket_name = "dex-settings"
+preview_bucket_name = "dex-settings"
+
 # Bind a Queue producer. Use this binding to schedule an arbitrary task that may be processed later by a Queue consumer.
 # Docs: https://developers.cloudflare.com/queues/get-started
 # [[queues.producers]]

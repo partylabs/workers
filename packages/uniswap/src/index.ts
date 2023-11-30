@@ -14,15 +14,19 @@ export interface Env {
 
 	CONTRACTS: R2Bucket;
 	LIST: R2Bucket;
+	DEX_SETTINGS: R2Bucket;
 }
+
+import { liquidityPositions } from './contract/liquidity';
+import { prices } from './contract/prices';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		switch (true) {
 			case request.url.endsWith('/prices'):
-				return new Response('Price response');
+				return prices(env);
 			case request.url.endsWith('/liquidity-positions'):
-				return new Response('Liquidity positions response');
+				return liquidityPositions(env);
 			default:
 				return new Response('Not found', { status: 404 });
 		}

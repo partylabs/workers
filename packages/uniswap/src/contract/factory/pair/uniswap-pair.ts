@@ -1,6 +1,6 @@
 import { Abi, Address, ContractFunctionConfig, getAddress } from 'viem';
-import { UniswapPairSettings } from './uniswap-pair-settings';
-import { FeeAmount } from './fee-amount';
+import { UniswapPairSettings } from './models/uniswap-pair-settings';
+import { FeeAmount } from '../../router/v3/enums/fee-amount-v3';
 
 export interface UniswapPair {
 	from: Address;

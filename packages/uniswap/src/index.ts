@@ -22,9 +22,21 @@ import { prices } from './contract/prices';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		if (request.method.toUpperCase() !== 'POST') {
+			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
+		}
+		const body = (await request.json()) as { [key: string]: string[] };
+
 		switch (true) {
 			case request.url.endsWith('/prices'):
-				return prices(env);
+				const results = await Promise.all(
+					Object.keys(body).flatMap(async (chainId: string) => {
+						const tokens = body[chainId];
+						return await prices(tokens, chainId, env);
+					})
+				).then((results) => results.filter((result) => result !== null).flat());
+
+				return new Response(JSON.stringify(results), { status: 200 });
 			case request.url.endsWith('/liquidity-positions'):
 				return liquidityPositions(env);
 			default:

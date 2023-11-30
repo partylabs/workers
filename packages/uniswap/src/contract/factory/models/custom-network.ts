@@ -1,4 +1,4 @@
-import { Token } from './token';
+import { Token } from '../../../models/token';
 import { NativeCurrencyInfo } from './native-currency-info';
 
 export interface CustomNetwork {

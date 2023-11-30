@@ -1,6 +1,8 @@
-import { UniswapVersion } from './uniswap-version';
+import { UniswapVersion } from '../../../../models/uniswap-version';
 import { CloneUniswapContractDetails } from './clone-uniswap-contract-details';
-import { CustomNetwork } from './custom-network';
+import { CustomNetwork } from '../../models/custom-network';
+import { UniswapError } from '../../../../models/uniswap-error';
+import { ErrorCodes } from '../../../../models/error-codes';
 
 export class UniswapPairSettings {
 	slippage: number;

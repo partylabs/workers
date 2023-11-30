@@ -1,5 +1,5 @@
 import { Abi } from 'abitype';
-import { IRouterMethods } from './route-methods';
+import { IRouterMethods } from '../../../router/models/route-methods';
 
 export interface CloneUniswapContractDetailsV2 {
 	routerAddress: string;

@@ -17,7 +17,7 @@ export interface Env {
 }
 
 import { createPublicClient, getAddress, http, fromHex } from 'viem';
-import { CHAINS } from './constants/chains';
+import { CHAINS } from './lib/chains';
 
 (BigInt.prototype as any).toJSON = function () {
 	return this.toString();

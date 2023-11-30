@@ -1,5 +1,7 @@
 export interface Env {
 	RPC_URL_1: string;
+
+	AUTH_WORKER: ValueOf;
 }
 
 import { createPublicClient, http } from 'viem';

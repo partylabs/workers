@@ -1,4 +1,4 @@
-import { ErrorCodes } from '../../../uniswap/src/models/error-codes';
+import { ErrorCodes } from './error-codes';
 
 export class UniswapError extends Error {
 	public name = 'UniswapError';

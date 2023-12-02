@@ -33,8 +33,8 @@ export default {
 			publicKeys: string[];
 		};
 
-		const r2ObjectERC20 = await env.CONTRACTS.get('erc20.json');
-		const ERC20 = (await r2ObjectERC20?.json()) as string;
+		const R2_ERC20 = await env.CONTRACTS.get('erc20.json');
+		const ERC20 = (await R2_ERC20?.json()) as string;
 
 		const balances = await Promise.all(
 			Object.keys(CHAINS).flatMap(async (chainId) => {
@@ -124,7 +124,6 @@ export default {
 			}
 		});
 
-		const allBalances = nativeBalances.concat(erc20Balances).filter((item: any) => item !== null);
-		return allBalances;
+		return nativeBalances.concat(erc20Balances).filter((item: any) => item !== null);
 	},
 };

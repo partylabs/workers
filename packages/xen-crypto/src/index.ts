@@ -14,6 +14,7 @@ export interface Env {
 
 	CONTRACTS: R2Bucket;
 }
+
 import { Abi } from 'viem';
 import { CHAINS } from './lib/chains';
 import { getMints } from './contract/mints';
@@ -82,7 +83,7 @@ export default {
 
 				return new Response(JSON.stringify(stakesResults), { status: 200 });
 			default:
-				return new Response('Not found', { status: 404 });
+				return new Response('Endpoint not found', { status: 404 });
 		}
 	},
 };

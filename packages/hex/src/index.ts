@@ -25,8 +25,18 @@ export interface Env {
 	// MY_QUEUE: Queue;
 }
 
+(BigInt.prototype as any).toJSON = function () {
+	return this.toString();
+};
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		if (request.method.toUpperCase() !== 'POST') {
+			return new Response(JSON.stringify({ error: 'Only POST method is supported' }), { status: 405 });
+		}
+		const { publicKeys } = (await request.json()) as {
+			publicKeys: string[];
+		};
 		return new Response('Hello World!');
 	},
 };

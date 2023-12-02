@@ -16,7 +16,7 @@ export interface Env {
 	RPC_URL_137: string;
 	RPC_URL_250: string;
 	RPC_URL_324: string;
-	RPC_URL_359: string;
+	RPC_URL_369: string;
 	RPC_URL_42161: string;
 	RPC_URL_43114: string;
 	RPC_URL_56: string;

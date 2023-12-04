@@ -3,6 +3,9 @@ import { createPublicClient, http, Abi, getAddress, formatEther } from 'viem';
 import { CHAINS } from '../lib/chains';
 import { GlobalInfo } from '../models/globalInfo';
 import { Stake } from '../models/stake';
+import { HEARTS_MASK, HEARTS_UINT_SHIFT, SATS_MASK } from '../models/constants';
+import { DailyData } from '../models/daily-data';
+import { interestForRange } from '../lib/helpers';
 
 export async function getStakes(publicKeys: string[], chainId: string, HEX_ABI: Abi, HEX_ADDRESS: string, env: Env): Promise<any[]> {
 	const providerURL = env[`RPC_URL_${chainId}`];
@@ -66,7 +69,7 @@ export async function getStakes(publicKeys: string[], chainId: string, HEX_ABI: 
 		return Array.from({ length: Number(stakeCount) }, (_, i) => {
 			return {
 				publicKey: getAddress(publicKey),
-				stakeId: i,
+				stakeIndex: i,
 				stakeLists: {
 					address: getAddress(HEX_ADDRESS),
 					abi: HEX_ABI,
@@ -81,7 +84,7 @@ export async function getStakes(publicKeys: string[], chainId: string, HEX_ABI: 
 		return [];
 	}
 
-	const [dailyDataResult, ...stakeListsContractsResults] = await client.multicall({
+	const [dailyDataRangeResult, ...stakeListsContractsResults] = (await client.multicall({
 		contracts: [
 			{
 				address: getAddress(HEX_ADDRESS),
@@ -91,6 +94,21 @@ export async function getStakes(publicKeys: string[], chainId: string, HEX_ABI: 
 			},
 			...stakeListsContracts.map((stakeListsContract: any) => stakeListsContract.stakeLists),
 		],
+	})) as unknown as [any, ...any[]];
+
+	const dailyDataRange = (dailyDataRangeResult.result as bigint[]).map((dailyDataDay: bigint) => {
+		let v = dailyDataDay;
+		let payout = v & HEARTS_MASK;
+		v = v >> HEARTS_UINT_SHIFT;
+		let shares = v & HEARTS_MASK;
+		v = v >> HEARTS_UINT_SHIFT;
+		let sats = v & SATS_MASK;
+		const dailyData: DailyData = {
+			payout: payout,
+			shares: shares,
+			sats: sats,
+		};
+		return dailyData;
 	});
 
 	const userStakesYield = stakeListsContractsResults.flatMap((stakeListsContractsResult: any, index: number) => {
@@ -108,7 +126,20 @@ export async function getStakes(publicKeys: string[], chainId: string, HEX_ABI: 
 			unlockedDay: stakeResult[5],
 			isAutoStake: stakeResult[6],
 		};
+
+		const stakeYield = interestForRange(dailyDataRange, stake.stakeShares);
+
+		const { stakeIndex, publicKey } = stakeListsContracts[index];
+
+		return {
+			stakeIndex: stakeIndex,
+			publicKey: publicKey,
+			address: getAddress(HEX_ADDRESS),
+			chainId: chain.id,
+			yield: stakeYield,
+			stake: stake,
+		};
 	});
 
-	return [];
+	return userStakesYield;
 }

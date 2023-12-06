@@ -1,8 +1,11 @@
-import { Abi, Address, ContractFunctionConfig, getAddress } from 'viem';
+import { Abi, Address, Chain, ContractFunctionConfig, getAddress } from 'viem';
 import { UniswapPairSettings } from './models/uniswap-pair-settings';
 import { FeeAmount } from '../../router/v3/enums/fee-amount-v3';
+import { TradeDirection } from './models/trade-direction';
+import { TradePath, getTradePath } from '../../../models/trade-path';
 
 export interface UniswapPair {
+	chain: Chain;
 	from: Address;
 	to: Address;
 	settings: UniswapPairSettings;
@@ -11,14 +14,18 @@ export interface UniswapPair {
 }
 
 export class UniswapPairFactory implements UniswapPair {
-	from: `0x${string}`;
-	to: `0x${string}`;
+	chain: Chain;
+	from: Address;
+	to: Address;
 	settings: UniswapPairSettings;
+	nativeWrappedAddress: Address;
 
-	constructor(params: { from: Address; to: Address; settings: UniswapPairSettings }) {
+	constructor(params: { chain: Chain; from: Address; to: Address; settings: UniswapPairSettings; nativeWrappedAddress: Address }) {
+		this.chain = params.chain;
 		this.from = params.from;
 		this.to = params.to;
 		this.settings = params.settings;
+		this.nativeWrappedAddress = params.nativeWrappedAddress;
 	}
 
 	getPairAddress(factoryV2: Abi): ContractFunctionConfig[] {
@@ -49,5 +56,43 @@ export class UniswapPairFactory implements UniswapPair {
 			});
 		}
 		return [];
+	}
+
+	public async trade(amount: string, direction: TradeDirection = TradeDirection.input): Promise<number> {
+		this.executeTradePath(amount, direction);
+		return 1;
+	}
+
+	private async executeTradePath(amount: string, direction: TradeDirection): Promise<number> {
+		switch (this.tradePath()) {
+			case TradePath.erc20ToEth:
+				this.findBestPriceAndPathErc20ToEth();
+				return 1;
+			case TradePath.ethToErc20:
+				this.findBestPriceAndPathEthToErc20();
+				return 2;
+			case TradePath.erc20ToErc20:
+				this.findBestPriceAndPathErc20ToErc20();
+				return 3;
+			default:
+				throw new Error('Invalid trade path');
+		}
+		return 1;
+	}
+
+	private tradePath(): TradePath {
+		return getTradePath(this.from, this.to, this.nativeWrappedAddress);
+	}
+
+	private findBestPriceAndPathErc20ToEth(): void {
+		return;
+	}
+
+	private findBestPriceAndPathEthToErc20(): void {
+		return;
+	}
+
+	private findBestPriceAndPathErc20ToErc20(): void {
+		return;
 	}
 }

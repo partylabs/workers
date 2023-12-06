@@ -9,8 +9,8 @@ export async function prices(tokens: string[], chainId: string, env: Env): Promi
 
 	const providerURL = env[`RPC_URL_${chainId}`];
 
-	const r2ObjectDexSsettings = await env.DEX_SETTINGS.get(`DEX_${chainId}.json`);
-	const dexSettings = await r2ObjectDexSsettings?.json<UniswapPairSettings>();
+	const r2ObjectDexSettings = await env.DEX_SETTINGS.get(`DEX_${chainId}.json`);
+	const dexSettings = await r2ObjectDexSettings?.json<UniswapPairSettings>();
 
 	const nativeWrappedAddress = dexSettings?.customNetwork?.nativeWrappedTokenInfo.contractAddress;
 	const usdcAddress = dexSettings?.customNetwork?.baseTokens?.usdc?.contractAddress;
@@ -43,9 +43,11 @@ export async function prices(tokens: string[], chainId: string, env: Env): Promi
 
 	const allPairs: UniswapPair[] = allTokens.map((tokenAddress: string): UniswapPair => {
 		return new UniswapPairFactory({
+			chain: chain,
 			from: getAddress(usdcAddress),
 			to: getAddress(tokenAddress),
 			settings: dexSettings,
+			nativeWrappedAddress: nativeWrappedAddress,
 		});
 	});
 

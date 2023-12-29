@@ -1,0 +1,19 @@
+{
+	"name": "collectable",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev --port 16700 --remote",
+		"start": "wrangler dev --port 16700 --remote"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20231218.0",
+		"typescript": "^5.0.4",
+		"wrangler": "^3.0.0"
+	},
+	"dependencies": {
+		"is-ipfs": "^8.0.1",
+		"viem": "^1.21.1"
+	}
+}

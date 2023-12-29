@@ -66,13 +66,13 @@ export class UniswapPairFactory implements UniswapPair {
 	private async executeTradePath(amount: string, direction: TradeDirection): Promise<number> {
 		switch (this.tradePath()) {
 			case TradePath.erc20ToEth:
-				this.findBestPriceAndPathErc20ToEth();
+				this.findBestPriceAndPathErc20ToEth(amount, direction);
 				return 1;
 			case TradePath.ethToErc20:
-				this.findBestPriceAndPathEthToErc20();
+				this.findBestPriceAndPathEthToErc20(amount, direction);
 				return 2;
 			case TradePath.erc20ToErc20:
-				this.findBestPriceAndPathErc20ToErc20();
+				this.findBestPriceAndPathErc20ToErc20(amount, direction);
 				return 3;
 			default:
 				throw new Error('Invalid trade path');
@@ -84,15 +84,15 @@ export class UniswapPairFactory implements UniswapPair {
 		return getTradePath(this.from, this.to, this.nativeWrappedAddress);
 	}
 
-	private findBestPriceAndPathErc20ToEth(): void {
+	private findBestPriceAndPathErc20ToEth(amount: string, direction: TradeDirection): void {
 		return;
 	}
 
-	private findBestPriceAndPathEthToErc20(): void {
+	private findBestPriceAndPathEthToErc20(amount: string, direction: TradeDirection): void {
 		return;
 	}
 
-	private findBestPriceAndPathErc20ToErc20(): void {
+	private findBestPriceAndPathErc20ToErc20(amount: string, direction: TradeDirection): void {
 		return;
 	}
 }

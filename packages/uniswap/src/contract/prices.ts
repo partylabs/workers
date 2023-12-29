@@ -47,7 +47,7 @@ export async function prices(tokens: string[], chainId: string, env: Env): Promi
 			from: getAddress(usdcAddress),
 			to: getAddress(tokenAddress),
 			settings: dexSettings,
-			nativeWrappedAddress: nativeWrappedAddress,
+			nativeWrappedAddress: getAddress(nativeWrappedAddress),
 		});
 	});
 

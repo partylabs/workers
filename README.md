@@ -40,3 +40,11 @@ RPC_URL_43114=https://avalanche-c-chain.publicnode.com
 RPC_URL_56=https://binance.llamarpc.com
 RPC_URL_8453=https://mainnet.base.org
 ```
+
+## Upgrade All Dependencies
+
+This script will loop through each worker in `/packages` folder, check for updates then execute an update
+
+```sh
+./upgrade-packages.sh
+```

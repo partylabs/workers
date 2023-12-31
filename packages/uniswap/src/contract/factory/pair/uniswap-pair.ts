@@ -3,28 +3,33 @@ import { UniswapPairSettings } from './models/uniswap-pair-settings';
 import { FeeAmount } from '../../router/v3/enums/fee-amount-v3';
 import { TradeDirection } from './models/trade-direction';
 import { TradePath, getTradePath } from '../../../models/trade-path';
+import { UniswapRouter } from '../../router/uniswap-router';
+import { Token } from '../../../models/token';
 
 export interface UniswapPair {
 	chain: Chain;
-	from: Address;
-	to: Address;
+	from: Token;
+	to: Token;
 	settings: UniswapPairSettings;
+	router: UniswapRouter;
 	getPairAddress: (factoryV2: Abi) => ContractFunctionConfig[];
 	getPoolAddress: (factoryV3: Abi) => ContractFunctionConfig[];
 }
 
 export class UniswapPairFactory implements UniswapPair {
 	chain: Chain;
-	from: Address;
-	to: Address;
+	from: Token;
+	to: Token;
 	settings: UniswapPairSettings;
+	router: UniswapRouter;
 	nativeWrappedAddress: Address;
 
-	constructor(params: { chain: Chain; from: Address; to: Address; settings: UniswapPairSettings; nativeWrappedAddress: Address }) {
+	constructor(params: { chain: Chain; from: Token; to: Token; settings: UniswapPairSettings; nativeWrappedAddress: Address }) {
 		this.chain = params.chain;
 		this.from = params.from;
 		this.to = params.to;
 		this.settings = params.settings;
+		this.router = new UniswapRouter(params.from, params.to, params.settings);
 		this.nativeWrappedAddress = params.nativeWrappedAddress;
 	}
 
@@ -58,12 +63,12 @@ export class UniswapPairFactory implements UniswapPair {
 		return [];
 	}
 
-	public async trade(amount: string, direction: TradeDirection = TradeDirection.input): Promise<number> {
+	public async trade(amount: bigint, direction: TradeDirection = TradeDirection.input): Promise<number> {
 		this.executeTradePath(amount, direction);
 		return 1;
 	}
 
-	private async executeTradePath(amount: string, direction: TradeDirection): Promise<number> {
+	private async executeTradePath(amount: bigint, direction: TradeDirection): Promise<number> {
 		switch (this.tradePath()) {
 			case TradePath.erc20ToEth:
 				this.findBestPriceAndPathErc20ToEth(amount, direction);
@@ -81,18 +86,24 @@ export class UniswapPairFactory implements UniswapPair {
 	}
 
 	private tradePath(): TradePath {
-		return getTradePath(this.from, this.to, this.nativeWrappedAddress);
+		return getTradePath(getAddress(this.from.contractAddress), getAddress(this.to.contractAddress), this.nativeWrappedAddress);
 	}
 
-	private findBestPriceAndPathErc20ToEth(amount: string, direction: TradeDirection): void {
+	private async findBestPriceAndPathErc20ToEth(amount: bigint, direction: TradeDirection): Promise<void> {
+		const bestRoute = await this.router.findBestRoute(amount, direction, TradePath.erc20ToEth);
+
 		return;
 	}
 
-	private findBestPriceAndPathEthToErc20(amount: string, direction: TradeDirection): void {
+	private async findBestPriceAndPathEthToErc20(amount: bigint, direction: TradeDirection): Promise<void> {
+		const bestRoute = await this.router.findBestRoute(amount, direction, TradePath.ethToErc20);
+
 		return;
 	}
 
-	private findBestPriceAndPathErc20ToErc20(amount: string, direction: TradeDirection): void {
+	private async findBestPriceAndPathErc20ToErc20(amount: bigint, direction: TradeDirection): Promise<void> {
+		const bestRoute = await this.router.findBestRoute(amount, direction, TradePath.erc20ToErc20);
+
 		return;
 	}
 }

@@ -1,33 +1,33 @@
 import { UniswapVersion } from '../../../../models/uniswap-version';
 import { CloneUniswapContractDetails } from './clone-uniswap-contract-details';
-import { CustomNetwork } from '../../models/custom-network';
+import { Network, mainnetNetwork } from '../../models/network';
 import { UniswapError } from '../../../../models/uniswap-error';
 import { ErrorCodes } from '../../../../models/error-codes';
 
 export class UniswapPairSettings {
+	network: Network;
 	slippage: number;
 	deadlineMinutes: number;
-	disableMultihops: boolean;
+	disableMultihop: boolean;
 	uniswapVersions: UniswapVersion[] = [UniswapVersion.v2, UniswapVersion.v3];
 	gasSettings?: string = undefined;
 	cloneUniswapContractDetails?: CloneUniswapContractDetails = undefined;
-	customNetwork?: CustomNetwork = undefined;
 
 	constructor(settings?: {
+		network: Network;
 		slippage?: number | undefined;
 		deadlineMinutes?: number | undefined;
-		disableMultihops?: boolean | undefined;
+		disableMultihop?: boolean | undefined;
 		uniswapVersions?: UniswapVersion[] | undefined;
 		gasSettings?: string | undefined;
 		cloneUniswapContractDetails?: CloneUniswapContractDetails | undefined;
-		customNetwork?: CustomNetwork | undefined;
 	}) {
+		this.network = settings?.network || mainnetNetwork;
 		this.slippage = settings?.slippage || 0.005;
 		this.deadlineMinutes = settings?.deadlineMinutes || 20;
-		this.disableMultihops = settings?.disableMultihops || false;
+		this.disableMultihop = settings?.disableMultihop || false;
 		this.gasSettings = settings?.gasSettings;
 		this.cloneUniswapContractDetails = settings?.cloneUniswapContractDetails;
-		this.customNetwork = settings?.customNetwork;
 
 		if (Array.isArray(settings?.uniswapVersions) && settings?.uniswapVersions.length === 0) {
 			throw new UniswapError('`uniswapVersions` must not be an empty array', ErrorCodes.uniswapVersionsMustNotBeAnEmptyArray);

@@ -16,7 +16,7 @@ export interface Env {
 	LIST: R2Bucket;
 }
 
-import { createPublicClient, getAddress, http, fromHex } from 'viem';
+import { createPublicClient, getAddress, http, fromHex, Abi } from 'viem';
 import { CHAINS } from './lib/chains';
 
 (BigInt.prototype as any).toJSON = function () {
@@ -34,7 +34,11 @@ export default {
 		};
 
 		const R2_ERC20 = await env.CONTRACTS.get('erc20.json');
-		const ERC20 = (await R2_ERC20?.json()) as string;
+		const ERC20 = await R2_ERC20?.json<Abi>();
+
+		if (!ERC20) {
+			return new Response(JSON.stringify({ error: 'No ERC20 ABI' }), { status: 405 });
+		}
 
 		const balances = await Promise.all(
 			Object.keys(CHAINS).flatMap(async (chainId) => {
@@ -45,7 +49,7 @@ export default {
 		return new Response(JSON.stringify(balances), { status: 200 });
 	},
 
-	async getBalances(publicKeys: string[], chainId: string, ERC20: string, env: Env) {
+	async getBalances(publicKeys: string[], chainId: string, ERC20: Abi, env: Env) {
 		const providerURL = env[`RPC_URL_${chainId}`];
 		const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
 

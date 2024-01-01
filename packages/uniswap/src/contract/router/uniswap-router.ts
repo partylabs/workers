@@ -1,8 +1,11 @@
-import { formatEther, formatUnits, parseEther, toHex } from 'viem';
+import { formatEther, formatUnits, getAddress, isAddressEqual, parseEther, toHex } from 'viem';
 import { TradePath } from '../../models/trade-path';
 import { TradeDirection } from '../factory/pair/models/trade-direction';
 import { Token } from '../../models/token';
 import { UniswapPairSettings } from '../factory/pair/models/uniswap-pair-settings';
+import { UniswapVersion } from '../../models/uniswap-version';
+import { Call } from '../../models/call';
+import { FeeAmount } from './v3/enums/fee-amount-v3';
 
 export class UniswapRouter {
 	private fromToken: Token;
@@ -86,6 +89,47 @@ export class UniswapRouter {
 			case false:
 				findPairs = [[[this.fromToken, this.toToken]]];
 				break;
+		}
+
+		// console.log('find Pairs', JSON.stringify(findPairs, null, 4));
+
+		const v2Calls: ReferenceCall[] = [];
+		const v3Calls: ReferenceCall[] = [];
+
+		if (this.settings.uniswapVersions.includes(UniswapVersion.v2)) {
+			for (let pairs = 0; pairs < findPairs.length; pairs++) {
+				for (let tokenPairs = 0; tokenPairs < findPairs[pairs].length; tokenPairs++) {
+					const fromToken = findPairs[pairs][tokenPairs][0];
+					const toToken = findPairs[pairs][tokenPairs][1];
+					if (isAddressEqual(fromToken.contractAddress, toToken.contractAddress)) continue;
+
+					v2Calls.push({
+						reference: `${fromToken.contractAddress}-${toToken.contractAddress}-${fromToken.symbol}/${toToken.symbol}`,
+						methodName: 'getPair',
+						methodParameters: [fromToken.contractAddress, toToken.contractAddress],
+					});
+				}
+			}
+		}
+
+		if (this.settings.uniswapVersions.includes(UniswapVersion.v3)) {
+			for (let pairs = 0; pairs < findPairs.length; pairs++) {
+				for (let tokenPairs = 0; tokenPairs < findPairs[pairs].length; tokenPairs++) {
+					const fromToken = findPairs[pairs][tokenPairs][0];
+					const toToken = findPairs[pairs][tokenPairs][1];
+
+					if (isAddressEqual(fromToken.contractAddress, toToken.contractAddress)) continue;
+
+					for (let fee = 0; fee < 3; fee++) {
+						const feeAmount = [FeeAmount.LOW, FeeAmount.MEDIUM, FeeAmount.HIGH][fee];
+						v3Calls.push({
+							reference: `${fromToken.contractAddress}-${toToken.contractAddress}-${fromToken.symbol}/${toToken.symbol}-${feeAmount}`,
+							methodName: 'getPool',
+							methodParameters: [fromToken.contractAddress, toToken.contractAddress, feeAmount],
+						});
+					}
+				}
+			}
 		}
 
 		return;

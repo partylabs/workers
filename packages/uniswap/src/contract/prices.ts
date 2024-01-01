@@ -1,10 +1,11 @@
 import { Env } from '..';
 import { CHAINS } from '../lib/chains';
 import { UniswapPairSettings } from './factory/pair/models/uniswap-pair-settings';
-import { createPublicClient, getAddress, parseAbi, http, fromHex, Abi } from 'viem';
+import { createPublicClient, getAddress, parseAbi, http, fromHex, Abi, Address } from 'viem';
 import { UniswapPair, UniswapPairFactory } from './factory/pair/uniswap-pair';
+import { multicall } from 'viem/_types/actions/public/multicall';
 
-export async function prices(tokens: string[], chainId: string, env: Env): Promise<Response> {
+export async function prices(tokenAddresses: Address[], chainId: string, env: Env): Promise<Response> {
 	const chain = CHAINS[chainId as unknown as keyof typeof CHAINS];
 
 	const providerURL = env[`RPC_URL_${chainId}`];
@@ -12,8 +13,8 @@ export async function prices(tokens: string[], chainId: string, env: Env): Promi
 	const r2ObjectDexSettings = await env.DEX_SETTINGS.get(`DEX_${chainId}.json`);
 	const dexSettings = await r2ObjectDexSettings?.json<UniswapPairSettings>();
 
-	const nativeWrappedAddress = dexSettings?.customNetwork?.nativeWrappedTokenInfo.contractAddress;
-	const usdcAddress = dexSettings?.customNetwork?.baseTokens?.usdc?.contractAddress;
+	const nativeWrappedAddress = dexSettings?.network?.nativeWrappedTokenInfo.contractAddress;
+	const usdcAddress = dexSettings?.network?.baseTokens?.usdc?.contractAddress;
 
 	const r2ObjectUNISWAP_FACTORY_V2 = await env.CONTRACTS.get('uniswap-factory-v2.json');
 	const factoryV2ABI = await r2ObjectUNISWAP_FACTORY_V2?.json<Abi>();
@@ -39,26 +40,26 @@ export async function prices(tokens: string[], chainId: string, env: Env): Promi
 		transport: http(providerURL),
 	});
 
-	const allTokens = [nativeWrappedAddress].concat(tokens);
+	const allAddresses = [nativeWrappedAddress].concat(tokenAddresses);
 
-	const allPairs: UniswapPair[] = allTokens.map((tokenAddress: string): UniswapPair => {
-		return new UniswapPairFactory({
-			chain: chain,
-			from: getAddress(usdcAddress),
-			to: getAddress(tokenAddress),
-			settings: dexSettings,
-			nativeWrappedAddress: getAddress(nativeWrappedAddress),
-		});
-	});
+	// const allPairs: UniswapPair[] = allTokens.map((tokenAddress: string): UniswapPair => {
+	// 	return new UniswapPairFactory({
+	// 		chain: chain,
+	// 		from: getAddress(usdcAddress),
+	// 		to: getAddress(tokenAddress),
+	// 		settings: dexSettings,
+	// 		nativeWrappedAddress: getAddress(nativeWrappedAddress),
+	// 	});
+	// });
 
-	const pairContracts = allPairs.flatMap((pair: UniswapPair) => {
-		return pair.getPairAddress(factoryV2ABI).concat(pair.getPoolAddress(factoryV3ABI));
-	});
+	// const pairContracts = allPairs.flatMap((pair: UniswapPair) => {
+	// 	return pair.getAllPossibleRoutes(factoryV2ABI, factoryV3ABI);
+	// });
 
-	let results = await client.multicall({
-		contracts: pairContracts,
-	});
+	// let results = await client.multicall({
+	// 	contracts: pairContracts,
+	// });
 
-	console.log(results);
+	// console.log(results);
 	return new Response('Price response');
 }
